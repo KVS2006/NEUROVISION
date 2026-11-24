@@ -86,21 +86,40 @@ function recordFromBackend(item) {
     };
 }
 
-/* Local sessions + MySQL sessions, one entry per session id, newest first. */
 function getAllRecords() {
     const local = loadAssessmentRecords();
     const byId = new Map(local.map((r) => [r.id, r]));
+
     backendRecords.forEach((item) => {
         const record = recordFromBackend(item);
         const existing = byId.get(record.id);
+
         if (existing) {
-            if (existing.modelPredictionStatus === "completed") existing.dbSaved = existing.dbSaved || true;
-            existing.dbAssessmentId = existing.dbAssessmentId || record.dbAssessmentId;
+            // Preserve the local assessment, but recover missing prediction
+            // data from the database record.
+            if (
+                (!existing.modelPrediction ||
+                 !existing.modelPrediction.predicted_label) &&
+                record.modelPrediction &&
+                record.modelPrediction.predicted_label
+            ) {
+                existing.modelPrediction = record.modelPrediction;
+                existing.modelPredictionStatus = "completed";
+            }
+
+            // Preserve database save information.
+            existing.dbSaved = existing.dbSaved || record.dbSaved || true;
+            existing.dbAssessmentId =
+                existing.dbAssessmentId || record.dbAssessmentId;
+
         } else {
             byId.set(record.id, record);
         }
     });
-    return [...byId.values()].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    return [...byId.values()].sort(
+        (a, b) => new Date(b.date) - new Date(a.date)
+    );
 }
 
 function recordPrediction(record) {
