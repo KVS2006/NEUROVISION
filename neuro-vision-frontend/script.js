@@ -9,14 +9,11 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-// FastAPI address. When the page is opened from the backend itself (http://127.0.0.1:8000)
-// the same origin is used; otherwise the usual local addresses are tried in turn.
-const API_CANDIDATES = (() => {
-    const list = [];
-    if (location.port === "8000") list.push("");
-    ["http://127.0.0.1:8000", "http://localhost:8000"].forEach((u) => { if (!list.includes(u)) list.push(u); });
-    return list;
-})();
+// Live Neuro Vision backend hosted on Render
+const API_CANDIDATES = [
+    "https://neurovision-e3wg.onrender.com"
+];
+
 let API_BASE_URL = API_CANDIDATES[0];
 
 async function apiFetch(path, options) {
